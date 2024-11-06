@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Notifications with Posts</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* Grid layout for posts */
+        .post-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+        .post {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            background-color: #00bfa5;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Posts</h1>
+
+    <!-- Post grid layout -->
+    <div class="post-grid" id="post-grid">
+        <!-- Posts will be dynamically generated here -->
+    </div>
+
+    <h1>Notifications</h1>
+    <ul id="notifications-list"></ul>
+
+    <script>
+        const socket = io();
+
+        // Example posts
+        const posts = [
+            { id: 1, user: 'Alice', content: 'This is my first post!' },
+            { id: 2, user: 'Bob', content: 'Having a great day!' },
+            { id: 3, user: 'Charlie', content: 'Just finished a project!' }
+        ];
+
+        // Function to render the post grid
+        function renderPosts() {
+            const postGrid = document.getElementById('post-grid');
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.classList.add('post');
+                postElement.innerHTML = `
+                    <h2>${post.user}</h2>
+                    <p>${post.content}</p>
+                    <button onclick="likePost(${post.id}, '${post.user}')">Like</button>
+                    <button>Comment</button>
+                `;
+                postGrid.appendChild(postElement);
+            });
+        }
+
+        // Handle like button click (push notification via server)
+        function likePost(postID, user) {
+            const eventData = {
+                type: 'like',
+                postID: postID,
+                user: user,
+                message: `${user} liked post #${postID}`
+            };
+            // Emit like event to the server
+            socket.emit('like_post', eventData);
+        }
+
+        // Listen for new notifications
+        socket.on('new_notification', function (message) {
+            const notification = JSON.parse(message);
+            const notificationList = document.getElementById('notifications-list');
+            const newNotification = document.createElement('li');
+            newNotification.textContent = notification.message;
+            notificationList.appendChild(newNotification);
+        });
+
+        // Render the posts when page loads
+        renderPosts();
+    </script>
+</body>
+</html>
